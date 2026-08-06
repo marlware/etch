@@ -14,11 +14,14 @@ public class ExponentialBackOff implements BackOff {
 
     @Override
     public void waitBeforeRetry(int attempt) {
-        long delayMs = baseDelayMs * (1L << Math.max(0, attempt - 1));
         try {
-            Thread.sleep(delayMs);
+            Thread.sleep(delayMsFor(attempt));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    long delayMsFor(int attempt) {
+        return baseDelayMs * (1L << Math.max(0, attempt - 1));
     }
 }

@@ -3,6 +3,84 @@ Etch is a distributed notification hub using Apache Kafka to decouple high-volum
 
 ---
 
+## Running locally
+
+Requires Docker. From the repo root:
+
+```bash
+docker compose up -d --build
+```
+
+This starts Kafka (KRaft, single node), MySQL, Redis, Prometheus, Grafana,
+and all five services. First build takes a few minutes (each service's
+Dockerfile builds the Maven reactor from scratch); subsequent starts are
+fast.
+
+| Service | URL |
+|---|---|
+| API Gateway | http://localhost:8080 |
+| Order Service | http://localhost:8081 |
+| Notification Service | http://localhost:8082 |
+| Email Service (mock) | http://localhost:8083 |
+| SMS Service (mock) | http://localhost:8084 |
+| Grafana | http://localhost:3000 (anonymous viewer access, or admin/admin) |
+| Prometheus | http://localhost:9090 |
+
+Each service also serves Swagger UI at `/swagger-ui.html` and its OpenAPI
+document at `/v3/api-docs`.
+
+### Try it end to end
+
+Get a token, then create an order through the gateway (bypassing it and
+hitting order-service directly on 8081 also works, and skips the auth step):
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/auth/token \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"demo"}' | jq -r .accessToken)
+
+curl -s -X POST http://localhost:8080/orders \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"userId":1,"orderNumber":"ORD-1001","total":49.99,"channels":["EMAIL"]}' | jq
+```
+
+Demo users 1-3 (seeded by Flyway) are `ada.lovelace@example.com`,
+`grace.hopper@example.com`, and `alan.turing@example.com`. A few seconds
+later:
+
+```bash
+AUTH=(-H "Authorization: Bearer $TOKEN")   # everything but /auth and /actuator needs this
+
+curl -s "${AUTH[@]}" http://localhost:8080/notifications/order/1 | jq       # delivery status
+curl -s "${AUTH[@]}" "http://localhost:8080/notifications/1/history" | jq  # full audit trail
+curl -s "${AUTH[@]}" "http://localhost:8080/admin/dlt" | jq                # anything dead-lettered
+```
+
+Email/SMS services fail a configurable fraction of requests on purpose
+(`EMAIL_FAILURE_RATE`, `SMS_FAILURE_RATE` in docker-compose.yml, default
+10%), so retries and occasional dead-lettering are visible without any
+extra setup.
+
+### Running the test suite
+
+```bash
+mvn test           # unit tests only
+mvn verify          # unit + Testcontainers integration tests (needs Docker)
+```
+
+## Project layout
+
+```
+services/           order-service, notification-service, email-service,
+                     sms-service, api-gateway -- one Spring Boot app each
+shared/              common-events, common-dto, common-security, common-utils
+infrastructure/      docker-compose support files, ECS task definitions
+.github/workflows/   CI/CD pipeline
+```
+
+---
+
 # Etch - Distributed Notification Hub
 
 ## Project Setup
@@ -455,18 +533,32 @@ infrastructure/
 
 ## Definition of Done
 
-- Multi-service architecture implemented
-- Spring Cloud Gateway routing requests
-- Orders published to Kafka
-- Notification service consuming Kafka events
-- Email and SMS services processing notifications
-- Retry strategy implemented
-- Dead Letter Queue working
-- Redis used for deduplication/idempotency
-- MySQL persistence complete
-- Structured logging with correlation IDs
-- Dockerized local development environment
-- AWS ECS deployment working
-- GitHub Actions CI/CD pipeline complete
-- Integration tests passing
-- API documentation with Swagger/OpenAPI
+- [x] Multi-service architecture implemented
+- [x] Spring Cloud Gateway routing requests
+- [x] Orders published to Kafka
+- [x] Notification service consuming Kafka events
+- [x] Email and SMS services processing notifications
+- [x] Retry strategy implemented
+- [x] Dead Letter Queue working
+- [x] Redis used for deduplication/idempotency
+- [x] MySQL persistence complete
+- [x] Structured logging with correlation IDs
+- [x] Dockerized local development environment
+- [x] AWS ECS deployment configuration written (task definitions +
+      pipeline); actually deploying requires an AWS account and the repo
+      secrets described in `infrastructure/aws/README.md`, neither of
+      which exist for this sample project
+- [x] GitHub Actions CI/CD pipeline complete
+- [x] Integration tests passing (`mvn verify`; needs a Docker daemon
+      reachable the standard way -- see note below for Docker Desktop on
+      Windows)
+- [x] API documentation with Swagger/OpenAPI
+
+> **Testcontainers on Windows + Docker Desktop:** if `mvn verify` can't
+> find a Docker environment even though `docker info` works fine from the
+> shell, Docker Desktop's named pipe may not be the one Testcontainers
+> defaults to. Set `DOCKER_HOST` to whatever `docker context inspect`
+> shows for the active context (e.g.
+> `npipe:////./pipe/dockerDesktopLinuxEngine`) before running Maven. This
+> doesn't come up in CI, which runs on Linux with a standard Docker
+> socket.

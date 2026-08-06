@@ -6,6 +6,7 @@ import com.etch.notificationservice.domain.NotificationAudit;
 import com.etch.notificationservice.domain.NotificationAuditRepository;
 import com.etch.notificationservice.domain.NotificationRepository;
 import com.etch.notificationservice.kafka.NotificationEventProducer;
+import com.etch.notificationservice.metrics.NotificationMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -28,13 +29,16 @@ public class DeadLetterService {
     private final NotificationRepository notificationRepository;
     private final NotificationAuditRepository auditRepository;
     private final NotificationEventProducer eventProducer;
+    private final NotificationMetrics metrics;
 
     public DeadLetterService(NotificationRepository notificationRepository,
                               NotificationAuditRepository auditRepository,
-                              NotificationEventProducer eventProducer) {
+                              NotificationEventProducer eventProducer,
+                              NotificationMetrics metrics) {
         this.notificationRepository = notificationRepository;
         this.auditRepository = auditRepository;
         this.eventProducer = eventProducer;
+        this.metrics = metrics;
     }
 
     @Transactional
@@ -46,6 +50,7 @@ public class DeadLetterService {
         log.warn("Notification {} (order {}, channel {}) dead-lettered after {} attempts: {}",
                 notification.getId(), notification.getOrderId(), notification.getChannel(),
                 notification.getRetryCount(), reason);
+        metrics.incrementDeadLettered();
 
         NotificationFailedEvent event = new NotificationFailedEvent(
                 correlationId,

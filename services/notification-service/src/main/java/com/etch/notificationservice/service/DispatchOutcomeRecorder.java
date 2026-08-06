@@ -9,6 +9,7 @@ import com.etch.notificationservice.domain.NotificationAudit;
 import com.etch.notificationservice.domain.NotificationAuditRepository;
 import com.etch.notificationservice.domain.NotificationRepository;
 import com.etch.notificationservice.kafka.NotificationEventProducer;
+import com.etch.notificationservice.metrics.NotificationMetrics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,13 +30,16 @@ class DispatchOutcomeRecorder {
     private final NotificationRepository notificationRepository;
     private final NotificationAuditRepository auditRepository;
     private final NotificationEventProducer eventProducer;
+    private final NotificationMetrics metrics;
 
     DispatchOutcomeRecorder(NotificationRepository notificationRepository,
                              NotificationAuditRepository auditRepository,
-                             NotificationEventProducer eventProducer) {
+                             NotificationEventProducer eventProducer,
+                             NotificationMetrics metrics) {
         this.notificationRepository = notificationRepository;
         this.auditRepository = auditRepository;
         this.eventProducer = eventProducer;
+        this.metrics = metrics;
     }
 
     @Transactional
@@ -46,6 +50,7 @@ class DispatchOutcomeRecorder {
                 "Delivered via " + notification.getChannel() + " (provider id " + response.providerMessageId() + ")"));
 
         log.info("Notification {} (order {}, channel {}) sent", notification.getId(), notification.getOrderId(), notification.getChannel());
+        metrics.incrementSent();
 
         eventProducer.publishSent(new NotificationSentEvent(
                 requested.getCorrelationId(), notification.getId(), notification.getOrderId(), notification.getChannel()));
@@ -58,5 +63,6 @@ class DispatchOutcomeRecorder {
         auditRepository.save(new NotificationAudit(notification.getId(), "ATTEMPT_FAILED",
                 "Attempt " + attempt + "/" + maxAttempts + " failed (retryable=" + ex.isRetryable() + "): " + ex.getMessage()));
         log.warn("Notification {} dispatch attempt {}/{} failed: {}", notification.getId(), attempt, maxAttempts, ex.getMessage());
+        metrics.incrementFailedAttempt();
     }
 }

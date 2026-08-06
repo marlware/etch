@@ -4,3 +4,28 @@ spring:
 
 server:
   port: 8084
+
+etch:
+  simulation:
+    unavailable-rate: ${SMS_UNAVAILABLE_RATE:0.0}
+    failure-rate: ${SMS_FAILURE_RATE:0.05}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+      probes:
+        enabled: true
+  health:
+    readinessstate:
+      enabled: true
+    livenessstate:
+      enabled: true
+
+logging:
+  pattern:
+    level: "%5p [correlationId=%X{correlationId}]"

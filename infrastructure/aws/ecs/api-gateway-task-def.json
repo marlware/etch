@@ -1,0 +1,44 @@
+{
+  "family": "etch-api-gateway",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/etchEcsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/etchApiGatewayTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "api-gateway",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/etch-api-gateway:latest",
+      "essential": true,
+      "portMappings": [
+        { "containerPort": 8080, "protocol": "tcp" }
+      ],
+      "environment": [
+        { "name": "ORDER_SERVICE_URL", "value": "http://order-service.etch.internal:8081" },
+        { "name": "NOTIFICATION_SERVICE_URL", "value": "http://notification-service.etch.internal:8082" },
+        { "name": "JWT_EXPIRATION_MS", "value": "3600000" }
+      ],
+      "secrets": [
+        { "name": "REDIS_HOST", "valueFrom": "arn:aws:ssm:${AWS_REGION}:${AWS_ACCOUNT_ID}:parameter/etch/shared/redis-host" },
+        { "name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:etch/api-gateway/jwt-secret" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/etch/api-gateway",
+          "awslogs-region": "${AWS_REGION}",
+          "awslogs-stream-prefix": "api-gateway",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -q -O- http://localhost:8080/actuator/health/liveness || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      }
+    }
+  ]
+}

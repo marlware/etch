@@ -1,0 +1,47 @@
+{
+  "family": "etch-notification-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/etchEcsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/etchNotificationServiceTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "notification-service",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/etch-notification-service:latest",
+      "essential": true,
+      "portMappings": [
+        { "containerPort": 8082, "protocol": "tcp" }
+      ],
+      "environment": [
+        { "name": "DB_NAME", "value": "etch_notifications" },
+        { "name": "KAFKA_BOOTSTRAP_SERVERS", "value": "kafka.etch.internal:9092" },
+        { "name": "EMAIL_SERVICE_URL", "value": "http://email-service.etch.internal:8083" },
+        { "name": "SMS_SERVICE_URL", "value": "http://sms-service.etch.internal:8084" }
+      ],
+      "secrets": [
+        { "name": "DB_HOST", "valueFrom": "arn:aws:ssm:${AWS_REGION}:${AWS_ACCOUNT_ID}:parameter/etch/shared/db-host" },
+        { "name": "DB_USERNAME", "valueFrom": "arn:aws:ssm:${AWS_REGION}:${AWS_ACCOUNT_ID}:parameter/etch/notification-service/db-username" },
+        { "name": "DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:etch/notification-service/db-password" },
+        { "name": "REDIS_HOST", "valueFrom": "arn:aws:ssm:${AWS_REGION}:${AWS_ACCOUNT_ID}:parameter/etch/shared/redis-host" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/etch/notification-service",
+          "awslogs-region": "${AWS_REGION}",
+          "awslogs-stream-prefix": "notification-service",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -q -O- http://localhost:8082/actuator/health/liveness || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

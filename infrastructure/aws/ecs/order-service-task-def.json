@@ -1,0 +1,44 @@
+{
+  "family": "etch-order-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/etchEcsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/etchOrderServiceTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "order-service",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/etch-order-service:latest",
+      "essential": true,
+      "portMappings": [
+        { "containerPort": 8081, "protocol": "tcp" }
+      ],
+      "environment": [
+        { "name": "DB_NAME", "value": "etch_orders" },
+        { "name": "KAFKA_BOOTSTRAP_SERVERS", "value": "kafka.etch.internal:9092" }
+      ],
+      "secrets": [
+        { "name": "DB_HOST", "valueFrom": "arn:aws:ssm:${AWS_REGION}:${AWS_ACCOUNT_ID}:parameter/etch/shared/db-host" },
+        { "name": "DB_USERNAME", "valueFrom": "arn:aws:ssm:${AWS_REGION}:${AWS_ACCOUNT_ID}:parameter/etch/order-service/db-username" },
+        { "name": "DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:etch/order-service/db-password" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/etch/order-service",
+          "awslogs-region": "${AWS_REGION}",
+          "awslogs-stream-prefix": "order-service",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -q -O- http://localhost:8081/actuator/health/liveness || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

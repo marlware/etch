@@ -1,0 +1,39 @@
+{
+  "family": "etch-email-service",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/etchEcsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::${AWS_ACCOUNT_ID}:role/etchEmailServiceTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "email-service",
+      "image": "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/etch-email-service:latest",
+      "essential": true,
+      "portMappings": [
+        { "containerPort": 8083, "protocol": "tcp" }
+      ],
+      "environment": [
+        { "name": "EMAIL_FAILURE_RATE", "value": "0.05" },
+        { "name": "EMAIL_UNAVAILABLE_RATE", "value": "0.0" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/etch/email-service",
+          "awslogs-region": "${AWS_REGION}",
+          "awslogs-stream-prefix": "email-service",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget -q -O- http://localhost:8083/actuator/health/liveness || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      }
+    }
+  ]
+}

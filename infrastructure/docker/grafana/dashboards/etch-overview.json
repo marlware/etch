@@ -1,0 +1,91 @@
+{
+  "title": "Etch Overview",
+  "uid": "etch-overview",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Notifications sent / min",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(etch_notifications_sent_total[5m])) * 60", "legendFormat": "sent" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Failed dispatch attempts / min",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(etch_notifications_attempt_failed_total[5m])) * 60", "legendFormat": "failed attempts" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Retries / min",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(etch_notifications_retried_total[5m])) * 60", "legendFormat": "retried" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Dead-lettered / min",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(etch_notifications_dead_lettered_total[5m])) * 60", "legendFormat": "dead-lettered" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Current DLQ size",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 16 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "etch_notifications_dlt_size" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "HTTP request rate by service",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 18, "x": 6, "y": 16 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(http_server_requests_seconds_count[5m])) by (job)", "legendFormat": "{{job}}" }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "HTTP 5xx rate by service",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[5m])) by (job)", "legendFormat": "{{job}}" }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "JVM heap used by service",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "datasource": "Prometheus",
+      "targets": [
+        { "expr": "sum(jvm_memory_used_bytes{area=\"heap\"}) by (job)", "legendFormat": "{{job}}" }
+      ]
+    }
+  ]
+}

@@ -21,11 +21,6 @@ public class SmsChannelClient extends AbstractChannelClient {
     }
 
     @Override
-    protected String subject() {
-        return null;
-    }
-
-    @Override
     protected Logger logger() {
         return log;
     }

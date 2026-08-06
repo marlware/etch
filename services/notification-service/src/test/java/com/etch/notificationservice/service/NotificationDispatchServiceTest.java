@@ -9,6 +9,7 @@ import com.etch.notificationservice.domain.Notification;
 import com.etch.notificationservice.domain.NotificationRepository;
 import com.etch.notificationservice.metrics.NotificationMetrics;
 import com.etch.notificationservice.retry.BackOff;
+import com.etch.notificationservice.template.NotificationMessageRenderer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,13 +49,16 @@ class NotificationDispatchServiceTest {
     @Mock
     private BackOff backOff;
 
+    private final NotificationMessageRenderer messageRenderer = new NotificationMessageRenderer();
+
     private NotificationDispatchService dispatchService;
 
     @BeforeEach
     void setUp() {
         when(emailClient.channel()).thenReturn(NotificationChannel.EMAIL);
         dispatchService = new NotificationDispatchService(
-                List.of(emailClient), notificationRepository, deadLetterService, outcomeRecorder, metrics, backOff, MAX_ATTEMPTS);
+                List.of(emailClient), notificationRepository, deadLetterService, outcomeRecorder, metrics,
+                messageRenderer, backOff, MAX_ATTEMPTS);
     }
 
     private Notification pendingNotification() {
@@ -72,12 +77,17 @@ class NotificationDispatchServiceTest {
         }
     }
 
+    private static NotificationRequestedEvent requestedEvent() {
+        return new NotificationRequestedEvent("corr-1", 10L, 1L, "ORD-1", new BigDecimal("20.00"),
+                NotificationChannel.EMAIL, "a@example.com");
+    }
+
     @Test
     void dispatch_succeedsOnFirstAttempt() {
         Notification notification = pendingNotification();
-        NotificationRequestedEvent event = new NotificationRequestedEvent("corr-1", 10L, 1L, NotificationChannel.EMAIL, "a@example.com");
+        NotificationRequestedEvent event = requestedEvent();
         when(notificationRepository.findById(10L)).thenReturn(Optional.of(notification));
-        when(emailClient.send(anyString(), anyString(), anyString())).thenReturn(SendMessageResponse.success("provider-1"));
+        when(emailClient.send(anyString(), any(), anyString(), anyString())).thenReturn(SendMessageResponse.success("provider-1"));
 
         dispatchService.dispatch(event);
 
@@ -89,9 +99,9 @@ class NotificationDispatchServiceTest {
     @Test
     void dispatch_retriesTransientFailuresThenSucceeds() {
         Notification notification = pendingNotification();
-        NotificationRequestedEvent event = new NotificationRequestedEvent("corr-1", 10L, 1L, NotificationChannel.EMAIL, "a@example.com");
+        NotificationRequestedEvent event = requestedEvent();
         when(notificationRepository.findById(10L)).thenReturn(Optional.of(notification));
-        when(emailClient.send(anyString(), anyString(), anyString()))
+        when(emailClient.send(anyString(), any(), anyString(), anyString()))
                 .thenThrow(new NotificationException("EMAIL service is unavailable", true))
                 .thenThrow(new NotificationException("EMAIL service is unavailable", true))
                 .thenReturn(SendMessageResponse.success("provider-1"));
@@ -107,9 +117,9 @@ class NotificationDispatchServiceTest {
     @Test
     void dispatch_deadLettersAfterExhaustingRetries() {
         Notification notification = pendingNotification();
-        NotificationRequestedEvent event = new NotificationRequestedEvent("corr-1", 10L, 1L, NotificationChannel.EMAIL, "a@example.com");
+        NotificationRequestedEvent event = requestedEvent();
         when(notificationRepository.findById(10L)).thenReturn(Optional.of(notification));
-        when(emailClient.send(anyString(), anyString(), anyString()))
+        when(emailClient.send(anyString(), any(), anyString(), anyString()))
                 .thenThrow(new NotificationException("EMAIL service is unavailable", true));
 
         dispatchService.dispatch(event);
@@ -124,9 +134,9 @@ class NotificationDispatchServiceTest {
     @Test
     void dispatch_deadLettersImmediatelyOnNonRetryableFailure() {
         Notification notification = pendingNotification();
-        NotificationRequestedEvent event = new NotificationRequestedEvent("corr-1", 10L, 1L, NotificationChannel.EMAIL, "a@example.com");
+        NotificationRequestedEvent event = requestedEvent();
         when(notificationRepository.findById(10L)).thenReturn(Optional.of(notification));
-        when(emailClient.send(anyString(), anyString(), anyString()))
+        when(emailClient.send(anyString(), any(), anyString(), anyString()))
                 .thenThrow(new NotificationException("EMAIL service rejected the request", false));
 
         dispatchService.dispatch(event);
@@ -140,7 +150,7 @@ class NotificationDispatchServiceTest {
     void dispatch_skipsWhenNotificationAlreadySent() {
         Notification notification = pendingNotification();
         notification.markSent();
-        NotificationRequestedEvent event = new NotificationRequestedEvent("corr-1", 10L, 1L, NotificationChannel.EMAIL, "a@example.com");
+        NotificationRequestedEvent event = requestedEvent();
         when(notificationRepository.findById(10L)).thenReturn(Optional.of(notification));
 
         dispatchService.dispatch(event);
@@ -148,18 +158,19 @@ class NotificationDispatchServiceTest {
         // emailClient.channel() is invoked once up front while the
         // dispatcher builds its channel->client map, so we assert on the
         // absence of a dispatch attempt rather than zero interactions
-        verify(emailClient, never()).send(anyString(), anyString(), anyString());
+        verify(emailClient, never()).send(anyString(), any(), anyString(), anyString());
         verifyNoInteractions(deadLetterService, outcomeRecorder, backOff);
     }
 
     @Test
     void dispatch_ignoresUnknownNotification() {
-        NotificationRequestedEvent event = new NotificationRequestedEvent("corr-1", 999L, 1L, NotificationChannel.EMAIL, "a@example.com");
+        NotificationRequestedEvent event = new NotificationRequestedEvent("corr-1", 999L, 1L, "ORD-999",
+                new BigDecimal("5.00"), NotificationChannel.EMAIL, "a@example.com");
         when(notificationRepository.findById(999L)).thenReturn(Optional.empty());
 
         dispatchService.dispatch(event);
 
-        verify(emailClient, never()).send(anyString(), anyString(), anyString());
+        verify(emailClient, never()).send(anyString(), any(), anyString(), anyString());
         verifyNoInteractions(deadLetterService, outcomeRecorder, backOff);
     }
 }

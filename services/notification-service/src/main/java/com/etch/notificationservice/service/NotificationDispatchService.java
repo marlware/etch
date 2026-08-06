@@ -10,6 +10,7 @@ import com.etch.notificationservice.domain.NotificationRepository;
 import com.etch.notificationservice.domain.NotificationStatus;
 import com.etch.notificationservice.metrics.NotificationMetrics;
 import com.etch.notificationservice.retry.BackOff;
+import com.etch.notificationservice.template.NotificationMessageRenderer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,6 +40,7 @@ public class NotificationDispatchService {
     private final DeadLetterService deadLetterService;
     private final DispatchOutcomeRecorder outcomeRecorder;
     private final NotificationMetrics metrics;
+    private final NotificationMessageRenderer messageRenderer;
     private final BackOff backOff;
     private final int maxAttempts;
 
@@ -47,6 +49,7 @@ public class NotificationDispatchService {
                                         DeadLetterService deadLetterService,
                                         DispatchOutcomeRecorder outcomeRecorder,
                                         NotificationMetrics metrics,
+                                        NotificationMessageRenderer messageRenderer,
                                         BackOff backOff,
                                         @Value("${etch.retry.max-attempts:3}") int maxAttempts) {
         this.clientsByChannel = channelClients.stream()
@@ -55,6 +58,7 @@ public class NotificationDispatchService {
         this.deadLetterService = deadLetterService;
         this.outcomeRecorder = outcomeRecorder;
         this.metrics = metrics;
+        this.messageRenderer = messageRenderer;
         this.backOff = backOff;
         this.maxAttempts = maxAttempts;
     }
@@ -72,11 +76,12 @@ public class NotificationDispatchService {
         }
 
         ChannelClient client = clientsByChannel.get(requested.getChannel());
-        String body = "Your order #" + requested.getOrderId() + " has been received and is being processed.";
+        String subject = messageRenderer.renderSubject(requested.getChannel(), requested);
+        String body = messageRenderer.renderBody(requested.getChannel(), requested);
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                SendMessageResponse response = client.send(notification.getRecipient(), body, requested.getCorrelationId());
+                SendMessageResponse response = client.send(notification.getRecipient(), subject, body, requested.getCorrelationId());
                 outcomeRecorder.recordSuccess(notification, requested, response);
                 return;
             } catch (NotificationException ex) {

@@ -20,8 +20,8 @@ abstract class AbstractChannelClient implements ChannelClient {
     }
 
     @Override
-    public SendMessageResponse send(String recipient, String body, String correlationId) {
-        SendMessageRequest request = new SendMessageRequest(recipient, subject(), body, correlationId);
+    public SendMessageResponse send(String recipient, String subject, String body, String correlationId) {
+        SendMessageRequest request = new SendMessageRequest(recipient, subject, body, correlationId);
         try {
             SendMessageResponse response = restClient.post()
                     .uri(sendPath)
@@ -52,8 +52,6 @@ abstract class AbstractChannelClient implements ChannelClient {
             throw new NotificationException(channel() + " service rejected the request: " + ex.getStatusCode(), false, ex);
         }
     }
-
-    protected abstract String subject();
 
     protected abstract Logger logger();
 }

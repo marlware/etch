@@ -1,8 +1,10 @@
 package com.etch.notificationservice.web;
 
 import com.etch.dto.DltRecordResponse;
+import com.etch.dto.NotificationAuditEntryResponse;
 import com.etch.dto.NotificationResponse;
 import com.etch.notificationservice.domain.Notification;
+import com.etch.notificationservice.domain.NotificationAudit;
 import com.etch.notificationservice.domain.NotificationDlt;
 
 public final class NotificationMapper {
@@ -19,6 +21,15 @@ public final class NotificationMapper {
                 notification.getRetryCount(),
                 notification.getCreatedAt(),
                 notification.getUpdatedAt()
+        );
+    }
+
+    public static NotificationAuditEntryResponse toResponse(NotificationAudit audit) {
+        return new NotificationAuditEntryResponse(
+                audit.getId(),
+                audit.getEvent(),
+                audit.getDetails(),
+                audit.getTimestamp()
         );
     }
 

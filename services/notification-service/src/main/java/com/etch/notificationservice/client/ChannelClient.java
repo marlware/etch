@@ -7,5 +7,5 @@ public interface ChannelClient {
 
     NotificationChannel channel();
 
-    SendMessageResponse send(String recipient, String body, String correlationId);
+    SendMessageResponse send(String recipient, String subject, String body, String correlationId);
 }

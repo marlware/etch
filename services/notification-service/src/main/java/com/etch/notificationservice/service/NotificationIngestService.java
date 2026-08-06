@@ -66,7 +66,8 @@ public class NotificationIngestService {
         }
 
         eventProducer.publishRequested(new NotificationRequestedEvent(
-                event.getCorrelationId(), notification.getId(), event.getOrderId(), channel, recipient));
+                event.getCorrelationId(), notification.getId(), event.getOrderId(), event.getOrderNumber(),
+                event.getTotal(), channel, recipient));
     }
 
     private String resolveRecipient(NotificationChannel channel, OrderCreatedEvent event) {

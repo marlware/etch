@@ -21,11 +21,6 @@ public class EmailChannelClient extends AbstractChannelClient {
     }
 
     @Override
-    protected String subject() {
-        return "Your Etch order has been received";
-    }
-
-    @Override
     protected Logger logger() {
         return log;
     }

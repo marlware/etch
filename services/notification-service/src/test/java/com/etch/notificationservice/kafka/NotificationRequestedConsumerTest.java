@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.Acknowledgment;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -37,7 +38,8 @@ class NotificationRequestedConsumerTest {
     }
 
     private NotificationRequestedEvent sampleEvent() {
-        return new NotificationRequestedEvent("corr-1", 10L, 1L, NotificationChannel.EMAIL, "a@example.com");
+        return new NotificationRequestedEvent("corr-1", 10L, 1L, "ORD-1", new BigDecimal("20.00"),
+                NotificationChannel.EMAIL, "a@example.com");
     }
 
     @Test

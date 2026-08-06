@@ -38,7 +38,7 @@ public class NotificationDlt {
     private NotificationChannel channel;
 
     @Lob
-    @Column(name = "original_payload")
+    @Column(name = "original_payload", length = 65535)
     private String originalPayload;
 
     @Column(name = "failure_reason", nullable = false, length = 500)

@@ -1,7 +1,40 @@
 # Etch
 Etch is a distributed notification hub using Apache Kafka to decouple high-volume business orders from notification delivery pipelines.
 
----
+<img src="/etch.gif" alt="Etch GIF" width="300">
+
+## System architecture
+
+### Diagram
+
+```mermaid
+flowchart LR
+    CLIENT["👤 Client"]
+
+    GATEWAY["🚪 API Gateway<br/>Spring Cloud Gateway"]
+    ORDER["📦 Order Service<br/>Spring Boot"]
+    NOTIFY["🔔 Notification Service<br/>Spring Boot"]
+    EMAIL["📧 Email Service<br/>Spring Boot"]
+    SMS["💬 SMS Service<br/>Spring Boot"]
+
+    KAFKA["⚡ Apache Kafka"]
+    DB[("🗄️ MySQL")]
+    REDIS[("⚡ Redis")]
+
+    CLIENT -->|REST / JSON| GATEWAY
+    GATEWAY --> ORDER
+
+    ORDER --> DB
+    ORDER -->|OrderCreatedEvent| KAFKA
+
+    KAFKA -->|order-created| NOTIFY
+    NOTIFY <--> REDIS
+
+    NOTIFY --> EMAIL
+    NOTIFY --> SMS
+
+    NOTIFY -->|delivery events| KAFKA
+```
 
 ## Running locally
 

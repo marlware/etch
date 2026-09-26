@@ -122,6 +122,22 @@ curl -s "${AUTH[@]}" "http://localhost:8080/admin/dlt" | jq
 
 The mock email and SMS services intentionally fail a configurable percentage of requests, making retries and dead-letter handling easy to observe locally.
 
+## Configuration
+
+Every setting has a local default, and `docker-compose.yml` overrides the ones that differ inside containers. The variables you are most likely to change:
+
+| Variable | Used by | Default | Purpose |
+|---|---|---|---|
+| `JWT_SECRET` | api-gateway | demo value | HS256 signing key, at least 32 bytes |
+| `JWT_EXPIRATION_MS` | api-gateway | `3600000` | Token lifetime in milliseconds |
+| `ORDER_SERVICE_URL`, `NOTIFICATION_SERVICE_URL` | api-gateway | `http://localhost:8081`, `http://localhost:8082` | Downstream routes |
+| `KAFKA_BOOTSTRAP_SERVERS` | order-service, notification-service | `localhost:9092` | Kafka brokers |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` | order-service, notification-service | `localhost`, `3306`, per-service schema, `etch`, `etch` | MySQL connection |
+| `REDIS_HOST`, `REDIS_PORT` | api-gateway, notification-service | `localhost`, `6379` | Rate limiting and idempotency |
+| `EMAIL_SERVICE_URL`, `SMS_SERVICE_URL` | notification-service | `http://localhost:8083`, `http://localhost:8084` | Channel service endpoints |
+| `EMAIL_FAILURE_RATE`, `SMS_FAILURE_RATE` | email-service, sms-service | `0.05` | Fraction of requests the mock rejects as a permanent failure |
+| `EMAIL_UNAVAILABLE_RATE`, `SMS_UNAVAILABLE_RATE` | email-service, sms-service | `0.0` | Fraction of requests the mock answers with a 503, which notification-service retries |
+
 ## Testing
 
 Run unit tests:

@@ -154,6 +154,13 @@ mvn verify
 
 The integration suite requires Docker.
 
+Run the tests for one service together with the shared modules it depends on:
+
+```bash
+mvn -pl services/order-service -am test
+```
+
+
 ## Project structure
 
 ```text

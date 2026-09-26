@@ -64,6 +64,11 @@ flowchart LR
 - unit and Testcontainers-based integration tests
 - Prometheus metrics and Grafana dashboards
 
+## Prerequisites
+
+- Docker with Docker Compose v2, to run the full stack
+- JDK 21 and Maven 3.9 or newer, to build and test outside Docker
+
 ## Running locally
 
 Requires Docker. From the repo root:

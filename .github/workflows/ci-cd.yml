@@ -33,7 +33,7 @@ jobs:
         # Docker is preinstalled on ubuntu-latest runners, so the
         # Testcontainers-backed tests (order-service, notification-service)
         # run against real MySQL/Kafka/Redis containers here.
-        run: mvn -B verify -DskipTests
+        run: mvn -B verify
 
       - name: Upload test reports
         if: failure()

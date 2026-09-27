@@ -122,6 +122,14 @@ curl -s "${AUTH[@]}" "http://localhost:8080/admin/dlt" | jq
 
 The mock email and SMS services intentionally fail a configurable percentage of requests, making retries and dead-letter handling easy to observe locally.
 
+### Stopping the stack
+
+```bash
+docker compose down
+```
+
+Add `-v` to also delete the MySQL and Grafana volumes and start from a clean database next time.
+
 ## Configuration
 
 Every setting has a local default, and `docker-compose.yml` overrides the ones that differ inside containers. The variables you are most likely to change:

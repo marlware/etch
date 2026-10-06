@@ -4,8 +4,6 @@ import com.etch.events.NotificationChannel;
 import com.etch.events.NotificationRequestedEvent;
 import com.etch.events.OrderCreatedEvent;
 import com.etch.notificationservice.domain.Notification;
-import com.etch.notificationservice.domain.NotificationAudit;
-import com.etch.notificationservice.domain.NotificationAuditRepository;
 import com.etch.notificationservice.domain.NotificationRepository;
 import com.etch.notificationservice.kafka.NotificationEventProducer;
 import org.slf4j.Logger;
@@ -27,16 +25,13 @@ public class NotificationIngestService {
     private static final Logger log = LoggerFactory.getLogger(NotificationIngestService.class);
 
     private final NotificationRepository notificationRepository;
-    private final NotificationAuditRepository auditRepository;
     private final NotificationEventProducer eventProducer;
     private final DeadLetterService deadLetterService;
 
     public NotificationIngestService(NotificationRepository notificationRepository,
-                                      NotificationAuditRepository auditRepository,
                                       NotificationEventProducer eventProducer,
                                       DeadLetterService deadLetterService) {
         this.notificationRepository = notificationRepository;
-        this.auditRepository = auditRepository;
         this.eventProducer = eventProducer;
         this.deadLetterService = deadLetterService;
     }
@@ -57,7 +52,6 @@ public class NotificationIngestService {
 
         Notification notification = new Notification(event.getOrderId(), channel, recipient == null ? "" : recipient, event.getCorrelationId());
         notification = notificationRepository.save(notification);
-        auditRepository.save(new NotificationAudit(notification.getId(), "RECEIVED", "order-created consumed for order " + event.getOrderId()));
 
         if (recipient == null || recipient.isBlank()) {
             deadLetterService.deadLetter(notification,

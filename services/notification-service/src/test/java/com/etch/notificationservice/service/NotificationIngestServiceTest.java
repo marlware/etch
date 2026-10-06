@@ -4,7 +4,6 @@ import com.etch.events.NotificationChannel;
 import com.etch.events.NotificationRequestedEvent;
 import com.etch.events.OrderCreatedEvent;
 import com.etch.notificationservice.domain.Notification;
-import com.etch.notificationservice.domain.NotificationAuditRepository;
 import com.etch.notificationservice.domain.NotificationRepository;
 import com.etch.notificationservice.kafka.NotificationEventProducer;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,8 +30,6 @@ class NotificationIngestServiceTest {
     @Mock
     private NotificationRepository notificationRepository;
     @Mock
-    private NotificationAuditRepository auditRepository;
-    @Mock
     private NotificationEventProducer eventProducer;
     @Mock
     private DeadLetterService deadLetterService;
@@ -41,7 +38,7 @@ class NotificationIngestServiceTest {
 
     @BeforeEach
     void setUp() {
-        ingestService = new NotificationIngestService(notificationRepository, auditRepository, eventProducer, deadLetterService);
+        ingestService = new NotificationIngestService(notificationRepository, eventProducer, deadLetterService);
         // not every test causes a save() (e.g. the no-channels case), so this
         // stub is lenient rather than required on every run
         lenient().when(notificationRepository.save(any(Notification.class))).thenAnswer(invocation -> invocation.getArgument(0));

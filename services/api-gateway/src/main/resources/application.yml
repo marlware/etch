@@ -2,12 +2,6 @@ spring:
   application:
     name: api-gateway
 
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      timeout: 2000ms
-
   cloud:
     gateway:
       routes:
@@ -15,51 +9,20 @@ spring:
           uri: ${ORDER_SERVICE_URL:http://localhost:8081}
           predicates:
             - Path=/orders/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 20
-                redis-rate-limiter.burstCapacity: 40
-                redis-rate-limiter.requestedTokens: 1
-                key-resolver: "#{@clientAddressKeyResolver}"
 
-        - id: notification-service-notifications
+        - id: notification-service
           uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/notifications/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 20
-                redis-rate-limiter.burstCapacity: 40
-                redis-rate-limiter.requestedTokens: 1
-                key-resolver: "#{@clientAddressKeyResolver}"
-
-        - id: notification-service-admin
-          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8082}
-          predicates:
-            - Path=/admin/**
-          filters:
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 5
-                redis-rate-limiter.burstCapacity: 10
-                redis-rate-limiter.requestedTokens: 1
-                key-resolver: "#{@clientAddressKeyResolver}"
 
 server:
   port: 8080
-
-etch:
-  jwt:
-    secret: ${JWT_SECRET:change-this-etch-demo-secret-key-please-32bytes-min}
-    expiration-ms: ${JWT_EXPIRATION_MS:3600000}
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus,gateway
+        include: health,info
   endpoint:
     health:
       show-details: when-authorized

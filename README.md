@@ -1,6 +1,6 @@
 # Etch
 
-Etch is a distributed notification hub using Apache Kafka to decouple high-volume business orders from notification delivery pipelines.
+Etch is a distributed notification hub using Apache Kafka to decouple high-volume business orders from email and SMS delivery.
 
 <img src="/etch.gif" alt="Etch GIF" width="300">
 
@@ -22,47 +22,39 @@ flowchart LR
 
     CLIENT -->|REST / JSON| GATEWAY
     GATEWAY --> ORDER
+    GATEWAY --> NOTIFY
 
     ORDER --> DB
     ORDER -->|OrderCreatedEvent| KAFKA
 
     KAFKA -->|order-created| NOTIFY
     NOTIFY <--> REDIS
+    NOTIFY --> DB
 
     NOTIFY --> EMAIL
     NOTIFY --> SMS
 
-    NOTIFY -->|delivery events| KAFKA
+    NOTIFY -->|sent / failed / dead-letter| KAFKA
 ```
 
 ## Tech stack
 
-### Core stack
 - **Backend:** Java 21, Spring Boot, Spring Cloud Gateway
 - **Messaging:** Apache Kafka
 - **Database:** MySQL, Flyway
-- **Caching & Idempotency:** Redis
-- **API:** REST, JSON, Swagger/OpenAPI
-- **Security:** JWT authentication
-
-### Engineering and testing
+- **Caching and idempotency:** Redis
 - **Testing:** JUnit, Spring Boot Test, Testcontainers
-- **Observability:** Spring Boot Actuator, Prometheus, Grafana, structured logging
 - **DevOps:** Docker, Docker Compose, GitHub Actions
 - **Deployment:** AWS ECS/Fargate, Amazon ECR, Amazon RDS, ElastiCache
 
 ## Key features
 
-- asynchronous, event-driven notification processing with Kafka
-- independent email and SMS delivery services
-- configurable retry handling and dead-letter queue
-- Redis-backed deduplication and idempotency
-- JWT-protected API gateway
-- structured logging with correlation IDs across services
-- persistent notification history and audit trail
-- Swagger/OpenAPI documentation for each service
+- five Spring Boot services that process orders and deliver email and SMS notifications asynchronously over Kafka
+- retry handling with exponential backoff, and a dead-letter topic for notifications that fail permanently
+- Redis-backed deduplication, so a redelivered Kafka event is never processed or sent twice
+- persisted notification status per order and channel
 - unit and Testcontainers-based integration tests
-- Prometheus metrics and Grafana dashboards
+- Dockerfiles for every service, a Docker Compose stack, and a GitHub Actions pipeline that tests, builds, and deploys to AWS ECS
 
 ## Prerequisites
 
@@ -71,13 +63,13 @@ flowchart LR
 
 ## Running locally
 
-Requires Docker. From the repo root:
+From the repo root:
 
 ```bash
 docker compose up -d --build
 ```
 
-This starts Kafka (KRaft, single node), MySQL, Redis, Prometheus, Grafana, and all five services. The first build takes a few minutes; subsequent starts are faster.
+This starts Kafka (KRaft, single node), MySQL, Redis, and all five services. The first build takes a few minutes; subsequent starts are faster.
 
 | Service | URL |
 |---|---|
@@ -86,41 +78,28 @@ This starts Kafka (KRaft, single node), MySQL, Redis, Prometheus, Grafana, and a
 | Notification Service | http://localhost:8082 |
 | Email Service (mock) | http://localhost:8083 |
 | SMS Service (mock) | http://localhost:8084 |
-| Grafana | http://localhost:3000 |
-| Prometheus | http://localhost:9090 |
-
-Each service exposes Swagger UI at `/swagger-ui.html` and its OpenAPI document at `/v3/api-docs`.
 
 ### Try it end to end
 
-Get a token:
-
-```bash
-TOKEN=$(curl -s -X POST http://localhost:8080/auth/token \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"demo"}' | jq -r .accessToken)
-```
-
-Create an order:
+Create an order through the gateway. Demo users are seeded by Flyway.
 
 ```bash
 curl -s -X POST http://localhost:8080/orders \
-  -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{"userId":1,"orderNumber":"ORD-1001","total":49.99,"channels":["EMAIL"]}' | jq
+  -d '{"userId":1,"orderNumber":"ORD-1001","total":49.99,"channels":["EMAIL","SMS"]}'
 ```
 
-Demo users are seeded by Flyway. After creating an order, inspect its notification status and audit history:
+Check the notification status for the order:
 
 ```bash
-AUTH=(-H "Authorization: Bearer $TOKEN")
-
-curl -s "${AUTH[@]}" http://localhost:8080/notifications/order/1 | jq
-curl -s "${AUTH[@]}" "http://localhost:8080/notifications/1/history" | jq
-curl -s "${AUTH[@]}" "http://localhost:8080/admin/dlt" | jq
+curl -s http://localhost:8080/notifications/order/1
 ```
 
-The mock email and SMS services intentionally fail a configurable percentage of requests, making retries and dead-letter handling easy to observe locally.
+The mock email and SMS services intentionally fail a configurable percentage of requests, which makes retries and dead-letter handling easy to observe. Watch them in the logs:
+
+```bash
+docker compose logs -f notification-service
+```
 
 ### Stopping the stack
 
@@ -128,7 +107,7 @@ The mock email and SMS services intentionally fail a configurable percentage of 
 docker compose down
 ```
 
-Add `-v` to also delete the MySQL and Grafana volumes and start from a clean database next time.
+Add `-v` to also delete the MySQL volume and start from a clean database next time.
 
 ## Configuration
 
@@ -136,12 +115,10 @@ Every setting has a local default, and `docker-compose.yml` overrides the ones t
 
 | Variable | Used by | Default | Purpose |
 |---|---|---|---|
-| `JWT_SECRET` | api-gateway | demo value | HS256 signing key, at least 32 bytes |
-| `JWT_EXPIRATION_MS` | api-gateway | `3600000` | Token lifetime in milliseconds |
 | `ORDER_SERVICE_URL`, `NOTIFICATION_SERVICE_URL` | api-gateway | `http://localhost:8081`, `http://localhost:8082` | Downstream routes |
 | `KAFKA_BOOTSTRAP_SERVERS` | order-service, notification-service | `localhost:9092` | Kafka brokers |
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD` | order-service, notification-service | `localhost`, `3306`, per-service schema, `etch`, `etch` | MySQL connection |
-| `REDIS_HOST`, `REDIS_PORT` | api-gateway, notification-service | `localhost`, `6379` | Rate limiting and idempotency |
+| `REDIS_HOST`, `REDIS_PORT` | notification-service | `localhost`, `6379` | Idempotency |
 | `EMAIL_SERVICE_URL`, `SMS_SERVICE_URL` | notification-service | `http://localhost:8083`, `http://localhost:8084` | Channel service endpoints |
 | `EMAIL_FAILURE_RATE`, `SMS_FAILURE_RATE` | email-service, sms-service | `0.05` | Fraction of requests the mock rejects as a permanent failure |
 | `EMAIL_UNAVAILABLE_RATE`, `SMS_UNAVAILABLE_RATE` | email-service, sms-service | `0.0` | Fraction of requests the mock answers with a 503, which notification-service retries |
@@ -168,7 +145,6 @@ Run the tests for one service together with the shared modules it depends on:
 mvn -pl services/order-service -am test
 ```
 
-
 ## Project structure
 
 ```text
@@ -182,7 +158,6 @@ services/
 shared/
 ├── common-events/
 ├── common-dto/
-├── common-security/
 └── common-utils/
 
 infrastructure/
@@ -201,7 +176,6 @@ The repository includes AWS ECS deployment configuration for:
 - Amazon ECR
 - Amazon RDS for MySQL
 - ElastiCache for Redis
-- CloudWatch Logs
 
 The GitHub Actions pipeline builds and tests the services, builds Docker images, and contains the configuration required to publish and deploy them when the appropriate AWS credentials and repository secrets are provided.
 
@@ -213,12 +187,8 @@ Creating an order does not wait for notification delivery. The Order Service per
 
 ### Failure handling
 
-Transient delivery failures are retried. Messages that exhaust their retry attempts are moved to a dead-letter topic where they can be inspected separately.
+Transient delivery failures are retried with exponential backoff. Permanent failures, and messages that exhaust their retry attempts, are published to a dead-letter topic (`notification-dlt`) and logged by the notification service.
 
 ### Idempotency
 
 Redis is used to prevent the same notification from being processed or delivered multiple times.
-
-### Observability
-
-Requests and events carry correlation IDs across services. Spring Boot Actuator exposes application health and metrics, which are collected by Prometheus and visualized through Grafana.

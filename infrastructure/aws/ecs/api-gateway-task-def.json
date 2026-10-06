@@ -16,12 +16,7 @@
       ],
       "environment": [
         { "name": "ORDER_SERVICE_URL", "value": "http://order-service.etch.internal:8081" },
-        { "name": "NOTIFICATION_SERVICE_URL", "value": "http://notification-service.etch.internal:8082" },
-        { "name": "JWT_EXPIRATION_MS", "value": "3600000" }
-      ],
-      "secrets": [
-        { "name": "REDIS_HOST", "valueFrom": "arn:aws:ssm:${AWS_REGION}:${AWS_ACCOUNT_ID}:parameter/etch/shared/redis-host" },
-        { "name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:${AWS_REGION}:${AWS_ACCOUNT_ID}:secret:etch/api-gateway/jwt-secret" }
+        { "name": "NOTIFICATION_SERVICE_URL", "value": "http://notification-service.etch.internal:8082" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",

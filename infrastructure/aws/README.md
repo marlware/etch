@@ -19,7 +19,7 @@ setup step outside this repo's scope.
   `etch_notifications`) -- mirrors the local docker-compose setup, provisioned
   via the init script equivalent run once against RDS.
 - **Amazon ElastiCache (Redis)**: one cluster, used by notification-service
-  for idempotency and by api-gateway for rate limiting.
+  for idempotency.
 - **Kafka**: for this project's scope, a single-node broker running as its
   own ECS Fargate service (same `apache/kafka` image as docker-compose) with
   an EFS-backed volume for `/var/lib/kafka`. A production deployment would
@@ -45,7 +45,6 @@ env vars locally:
 | `DB_HOST` | SSM `/etch/shared/db-host` |
 | `DB_USERNAME` / `DB_PASSWORD` | SSM param / Secrets Manager, per service |
 | `REDIS_HOST` | SSM `/etch/shared/redis-host` |
-| `JWT_SECRET` | Secrets Manager `etch/api-gateway/jwt-secret` |
 
 ## IAM
 

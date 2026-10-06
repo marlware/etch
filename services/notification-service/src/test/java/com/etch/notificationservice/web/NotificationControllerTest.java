@@ -3,8 +3,6 @@ package com.etch.notificationservice.web;
 import com.etch.events.NotificationChannel;
 import com.etch.notificationservice.config.GlobalExceptionHandler;
 import com.etch.notificationservice.domain.Notification;
-import com.etch.notificationservice.domain.NotificationAudit;
-import com.etch.notificationservice.domain.NotificationAuditRepository;
 import com.etch.notificationservice.domain.NotificationRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,9 +28,6 @@ class NotificationControllerTest {
     @MockBean
     private NotificationRepository notificationRepository;
 
-    @MockBean
-    private NotificationAuditRepository auditRepository;
-
     @Test
     void listsNotificationsForAnOrder() throws Exception {
         Notification notification = new Notification(10L, NotificationChannel.EMAIL, "buyer@example.com", "corr-1");
@@ -53,28 +48,5 @@ class NotificationControllerTest {
         mockMvc.perform(get("/notifications/order/99"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
-    }
-
-    @Test
-    void returnsTheAuditHistoryInOrder() throws Exception {
-        when(notificationRepository.existsById(5L)).thenReturn(true);
-        when(auditRepository.findByNotificationIdOrderByTimestampAsc(5L)).thenReturn(List.of(
-                new NotificationAudit(5L, "RECEIVED", null),
-                new NotificationAudit(5L, "SENT", "providerMessageId=email-1")));
-
-        mockMvc.perform(get("/notifications/5/history"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].event").value("RECEIVED"))
-                .andExpect(jsonPath("$[1].event").value("SENT"))
-                .andExpect(jsonPath("$[1].details").value("providerMessageId=email-1"));
-    }
-
-    @Test
-    void returnsNotFoundForTheHistoryOfAnUnknownNotification() throws Exception {
-        when(notificationRepository.existsById(404L)).thenReturn(false);
-
-        mockMvc.perform(get("/notifications/404/history"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("NOT_FOUND"));
     }
 }

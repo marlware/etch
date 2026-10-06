@@ -26,7 +26,7 @@ public class OrderEventProducer {
                     if (ex != null) {
                         // Fire-and-forget by design (README: "return immediately without
                         // waiting for notifications") -- log loudly since nothing else
-                        // observes this failure; a stuck producer shows up in DLQ/metrics
+                        // observes this failure; a stuck producer shows up in the logs
                         // via the eventual absence of a NotificationRequestedEvent instead.
                         log.error("Failed to publish OrderCreatedEvent orderId={}", event.getOrderId(), ex);
                         return;

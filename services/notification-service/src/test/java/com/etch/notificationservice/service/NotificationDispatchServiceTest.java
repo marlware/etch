@@ -7,7 +7,6 @@ import com.etch.events.NotificationRequestedEvent;
 import com.etch.notificationservice.client.ChannelClient;
 import com.etch.notificationservice.domain.Notification;
 import com.etch.notificationservice.domain.NotificationRepository;
-import com.etch.notificationservice.metrics.NotificationMetrics;
 import com.etch.notificationservice.retry.BackOff;
 import com.etch.notificationservice.template.NotificationMessageRenderer;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,8 +44,6 @@ class NotificationDispatchServiceTest {
     @Mock
     private DispatchOutcomeRecorder outcomeRecorder;
     @Mock
-    private NotificationMetrics metrics;
-    @Mock
     private BackOff backOff;
 
     private final NotificationMessageRenderer messageRenderer = new NotificationMessageRenderer();
@@ -57,7 +54,7 @@ class NotificationDispatchServiceTest {
     void setUp() {
         when(emailClient.channel()).thenReturn(NotificationChannel.EMAIL);
         dispatchService = new NotificationDispatchService(
-                List.of(emailClient), notificationRepository, deadLetterService, outcomeRecorder, metrics,
+                List.of(emailClient), notificationRepository, deadLetterService, outcomeRecorder,
                 messageRenderer, backOff, MAX_ATTEMPTS);
     }
 

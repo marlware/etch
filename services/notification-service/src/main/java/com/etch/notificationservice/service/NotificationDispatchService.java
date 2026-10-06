@@ -8,7 +8,6 @@ import com.etch.notificationservice.client.ChannelClient;
 import com.etch.notificationservice.domain.Notification;
 import com.etch.notificationservice.domain.NotificationRepository;
 import com.etch.notificationservice.domain.NotificationStatus;
-import com.etch.notificationservice.metrics.NotificationMetrics;
 import com.etch.notificationservice.retry.BackOff;
 import com.etch.notificationservice.template.NotificationMessageRenderer;
 import org.slf4j.Logger;
@@ -39,7 +38,6 @@ public class NotificationDispatchService {
     private final NotificationRepository notificationRepository;
     private final DeadLetterService deadLetterService;
     private final DispatchOutcomeRecorder outcomeRecorder;
-    private final NotificationMetrics metrics;
     private final NotificationMessageRenderer messageRenderer;
     private final BackOff backOff;
     private final int maxAttempts;
@@ -48,7 +46,6 @@ public class NotificationDispatchService {
                                         NotificationRepository notificationRepository,
                                         DeadLetterService deadLetterService,
                                         DispatchOutcomeRecorder outcomeRecorder,
-                                        NotificationMetrics metrics,
                                         NotificationMessageRenderer messageRenderer,
                                         BackOff backOff,
                                         @Value("${etch.retry.max-attempts:3}") int maxAttempts) {
@@ -57,7 +54,6 @@ public class NotificationDispatchService {
         this.notificationRepository = notificationRepository;
         this.deadLetterService = deadLetterService;
         this.outcomeRecorder = outcomeRecorder;
-        this.metrics = metrics;
         this.messageRenderer = messageRenderer;
         this.backOff = backOff;
         this.maxAttempts = maxAttempts;
@@ -91,7 +87,6 @@ public class NotificationDispatchService {
                     deadLetterService.deadLetter(notification, ex.getMessage(), requested.getCorrelationId());
                     return;
                 }
-                metrics.incrementRetried();
                 backOff.waitBeforeRetry(attempt);
             }
         }

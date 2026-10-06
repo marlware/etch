@@ -10,7 +10,7 @@ public final class KafkaTopics {
 
     public static final String ORDER_CREATED_CONSUMER_GROUP = "notification-service-order-created";
     public static final String NOTIFICATION_REQUESTED_CONSUMER_GROUP = "notification-service-dispatch";
-    public static final String NOTIFICATION_DLT_CONSUMER_GROUP = "notification-service-dlt-archiver";
+    public static final String NOTIFICATION_DLT_CONSUMER_GROUP = "notification-service-dlt";
 
     private KafkaTopics() {
     }

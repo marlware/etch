@@ -141,45 +141,13 @@ services:
     ports:
       - "8080:8080"
     environment:
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
       ORDER_SERVICE_URL: http://order-service:8081
       NOTIFICATION_SERVICE_URL: http://notification-service:8082
-      JWT_SECRET: local-dev-etch-gateway-secret-please-32bytes-min
     depends_on:
-      redis:
-        condition: service_healthy
       order-service:
         condition: service_started
       notification-service:
         condition: service_started
-    networks: [ etch-net ]
-
-  prometheus:
-    image: prom/prometheus:v2.53.0
-    container_name: etch-prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./infrastructure/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    networks: [ etch-net ]
-
-  grafana:
-    image: grafana/grafana:11.1.0
-    container_name: etch-grafana
-    ports:
-      - "3000:3000"
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_AUTH_ANONYMOUS_ENABLED: "true"
-      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
-    volumes:
-      - ./infrastructure/docker/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./infrastructure/docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
-      - grafana-data:/var/lib/grafana
-    depends_on:
-      - prometheus
     networks: [ etch-net ]
 
 networks:
@@ -188,4 +156,3 @@ networks:
 
 volumes:
   mysql-data:
-  grafana-data:

@@ -69,7 +69,7 @@ class OrderIntegrationTest {
 
     @Test
     void creatingAnOrder_persistsItAndPublishesOrderCreatedEvent() {
-        // seeded by Flyway's V2__seed_demo_users.sql, which runs against the container on startup
+        // seeded by data.sql, which runs against the container on startup
         OrderRequest request = new OrderRequest(1L, "ORD-IT-1001", new BigDecimal("42.50"), List.of(NotificationChannel.EMAIL));
 
         ResponseEntity<OrderResponse> response = restTemplate.postForEntity("/orders", request, OrderResponse.class);

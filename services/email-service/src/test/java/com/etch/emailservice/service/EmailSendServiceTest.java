@@ -41,4 +41,16 @@ class EmailSendServiceTest {
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("503");
     }
+
+    @Test
+    void rejectsRatesThatSumPastOne() {
+        assertThatThrownBy(() -> new EmailSendService(0.6, 0.6))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void rejectsNegativeRates() {
+        assertThatThrownBy(() -> new EmailSendService(-0.1, 0.0))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
 }

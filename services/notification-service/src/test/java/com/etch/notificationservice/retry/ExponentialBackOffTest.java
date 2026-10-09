@@ -24,6 +24,14 @@ class ExponentialBackOffTest {
     }
 
     @Test
+    void delayIsCappedForHighAttemptCounts() {
+        ExponentialBackOff backOff = new ExponentialBackOff(500L);
+
+        assertThat(backOff.delayMsFor(10)).isEqualTo(30_000L);
+        assertThat(backOff.delayMsFor(200)).isEqualTo(30_000L);
+    }
+
+    @Test
     void waitBeforeRetry_actuallySleepsApproximatelyTheComputedDelay() {
         ExponentialBackOff backOff = new ExponentialBackOff(20L);
 

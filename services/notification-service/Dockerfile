@@ -16,4 +16,4 @@ COPY --from=build /workspace/services/notification-service/target/notification-s
 USER etch
 
 EXPOSE 8082
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]

@@ -16,4 +16,4 @@ COPY --from=build /workspace/services/sms-service/target/sms-service.jar app.jar
 USER etch
 
 EXPOSE 8084
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]

@@ -16,4 +16,4 @@ COPY --from=build /workspace/services/api-gateway/target/api-gateway.jar app.jar
 USER etch
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]

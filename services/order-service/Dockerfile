@@ -18,4 +18,4 @@ COPY --from=build /workspace/services/order-service/target/order-service.jar app
 USER etch
 
 EXPOSE 8081
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "/app/app.jar"]

@@ -60,11 +60,11 @@ flowchart LR
 
 ## Tech stack
 
-Java 21, Spring Boot, Spring Cloud Gateway, Apache Kafka, MySQL, Redis, JUnit and Testcontainers, Docker and Docker Compose, GitHub Actions, and AWS (ECS/Fargate, ECR, RDS, ElastiCache).
+Java 25, Spring Boot, Spring Cloud Gateway, Apache Kafka, MySQL, Redis, JUnit and Testcontainers, Docker and Docker Compose, GitHub Actions, and AWS (ECS/Fargate, ECR, RDS, ElastiCache).
 
 ## Running it
 
-You need Docker with Compose v2. To build or test outside Docker you also need JDK 21 and Maven 3.9 or newer.
+You need Docker with Compose v2. To build or test outside Docker you also need JDK 25 and Maven 3.9 or newer.
 
 From the repo root:
 

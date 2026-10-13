@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class ExponentialBackOff implements BackOff {
 
+    private static final long MAX_DELAY_MS = 30_000L;
+
     private final long baseDelayMs;
 
     public ExponentialBackOff(@Value("${etch.retry.base-delay-ms:500}") long baseDelayMs) {
@@ -22,6 +24,8 @@ public class ExponentialBackOff implements BackOff {
     }
 
     long delayMsFor(int attempt) {
-        return baseDelayMs * (1L << Math.max(0, attempt - 1));
+        // clamp the shift so a large attempt count can't overflow into a negative delay
+        int shift = Math.min(Math.max(0, attempt - 1), 20);
+        return Math.min(baseDelayMs << shift, MAX_DELAY_MS);
     }
 }

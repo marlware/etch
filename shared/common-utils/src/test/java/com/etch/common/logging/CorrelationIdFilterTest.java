@@ -49,6 +49,30 @@ class CorrelationIdFilterTest {
     }
 
     @Test
+    void replacesAHeaderWithUnexpectedCharacters() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(CorrelationIdConstants.HEADER_NAME, "abc 123 <script>");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, (req, res) -> { });
+
+        assertThat(response.getHeader(CorrelationIdConstants.HEADER_NAME))
+                .isNotEqualTo("abc 123 <script>")
+                .matches("[0-9a-f-]{36}");
+    }
+
+    @Test
+    void replacesAnOverlongHeader() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader(CorrelationIdConstants.HEADER_NAME, "a".repeat(200));
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, (req, res) -> { });
+
+        assertThat(response.getHeader(CorrelationIdConstants.HEADER_NAME)).hasSize(36);
+    }
+
+    @Test
     void clearsMdcAfterTheRequestCompletes() throws Exception {
         filter.doFilter(new MockHttpServletRequest(), new MockHttpServletResponse(), (req, res) -> { });
 

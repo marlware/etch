@@ -30,6 +30,11 @@ public class EmailSendService {
 
     public EmailSendService(@Value("${etch.simulation.unavailable-rate:0.0}") double unavailableRate,
                              @Value("${etch.simulation.failure-rate:0.05}") double failureRate) {
+        if (unavailableRate < 0 || failureRate < 0 || unavailableRate + failureRate > 1.0) {
+            throw new IllegalArgumentException(
+                    "etch.simulation rates must be non-negative and sum to at most 1.0 (unavailable="
+                            + unavailableRate + ", failure=" + failureRate + ")");
+        }
         this.unavailableRate = unavailableRate;
         this.failureRate = failureRate;
     }

@@ -49,6 +49,9 @@ public class NotificationDispatchService {
                                         NotificationMessageRenderer messageRenderer,
                                         BackOff backOff,
                                         @Value("${etch.retry.max-attempts:3}") int maxAttempts) {
+        if (maxAttempts < 1) {
+            throw new IllegalArgumentException("etch.retry.max-attempts must be at least 1 (was " + maxAttempts + ")");
+        }
         this.clientsByChannel = channelClients.stream()
                 .collect(Collectors.toMap(ChannelClient::channel, Function.identity()));
         this.notificationRepository = notificationRepository;

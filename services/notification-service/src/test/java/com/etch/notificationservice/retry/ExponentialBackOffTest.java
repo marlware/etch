@@ -3,6 +3,7 @@ package com.etch.notificationservice.retry;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ExponentialBackOffTest {
 
@@ -13,6 +14,12 @@ class ExponentialBackOffTest {
         assertThat(backOff.delayMsFor(1)).isEqualTo(100L);
         assertThat(backOff.delayMsFor(2)).isEqualTo(200L);
         assertThat(backOff.delayMsFor(3)).isEqualTo(400L);
+    }
+
+    @Test
+    void rejectsNonPositiveBaseDelay() {
+        assertThatThrownBy(() -> new ExponentialBackOff(0L)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> new ExponentialBackOff(-1L)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

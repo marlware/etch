@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -56,6 +57,14 @@ class IdempotencyServiceTest {
 
         assertThat(idempotencyService.claim("k2", customTtl)).isTrue();
         verify(valueOperations).setIfAbsent("k2", "1", customTtl);
+    }
+
+    @Test
+    void claim_rejectsNonPositiveTtl() {
+        assertThatThrownBy(() -> idempotencyService.claim("k3", Duration.ZERO))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> idempotencyService.claim("k3", Duration.ofSeconds(-1)))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

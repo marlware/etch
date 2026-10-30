@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -56,6 +57,14 @@ class NotificationDispatchServiceTest {
         dispatchService = new NotificationDispatchService(
                 List.of(emailClient), notificationRepository, deadLetterService, outcomeRecorder,
                 messageRenderer, backOff, MAX_ATTEMPTS);
+    }
+
+    @Test
+    void constructor_rejectsMaxAttemptsBelowOne() {
+        assertThatThrownBy(() -> new NotificationDispatchService(
+                List.of(emailClient), notificationRepository, deadLetterService, outcomeRecorder,
+                messageRenderer, backOff, 0))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     private Notification pendingNotification() {

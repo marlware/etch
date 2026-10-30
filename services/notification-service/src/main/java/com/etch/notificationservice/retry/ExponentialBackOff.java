@@ -11,6 +11,9 @@ public class ExponentialBackOff implements BackOff {
     private final long baseDelayMs;
 
     public ExponentialBackOff(@Value("${etch.retry.base-delay-ms:500}") long baseDelayMs) {
+        if (baseDelayMs <= 0) {
+            throw new IllegalArgumentException("etch.retry.base-delay-ms must be positive (was " + baseDelayMs + ")");
+        }
         this.baseDelayMs = baseDelayMs;
     }
 

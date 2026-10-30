@@ -33,6 +33,9 @@ public class IdempotencyService {
     }
 
     public boolean claim(String key, Duration ttl) {
+        if (ttl.isZero() || ttl.isNegative()) {
+            throw new IllegalArgumentException("Idempotency claim ttl must be positive (was " + ttl + ")");
+        }
         Boolean firstClaim = redisTemplate.opsForValue().setIfAbsent(key, "1", ttl);
         return Boolean.TRUE.equals(firstClaim);
     }

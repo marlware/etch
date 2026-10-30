@@ -91,6 +91,22 @@ Here's the journey of one order.
 - GitHub Actions
 - AWS (ECS/Fargate, ECR, RDS, ElastiCache)
 
+## Why these technologies
+
+Each tool was picked for a reason. Here's what each one does for Etch.
+
+- **Java and Spring Boot** make it quick to build several small services that all work the same way
+- **Spring Cloud Gateway** gives clients one front door, and it sends each request to the right service
+- **Kafka** lets the order service finish its job without waiting on notifications
+- Kafka also keeps events around, so they can be retried or parked instead of lost
+- **MySQL** saves orders and notifications reliably
+- **Redis** remembers what's already been handled, which is what stops duplicate messages
+- **JUnit and Testcontainers** let the tests run against real MySQL, Kafka, and Redis instead of fakes
+- **Docker Compose** starts all five services and their helpers with one command
+- **GitHub Actions** tests, builds, and deploys every change automatically
+- **AWS ECS Fargate** runs the containers without you managing servers
+- **ECR, RDS, and ElastiCache** store the images, and run MySQL and Redis as managed services
+
 ## Running it
 
 You'll need Docker with Compose v2. To build or test outside Docker, you'll also need JDK 25 and Maven 3.9 or newer.

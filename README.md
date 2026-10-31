@@ -104,8 +104,6 @@ Here's the journey of one order.
 - **AWS ECS Fargate** runs the containers without managing servers
 - **ECR, RDS, and ElastiCache** store images and host MySQL and Redis
 
-Here's how the pieces connect.
-
 ```mermaid
 flowchart LR
     Client["Client"] --> Gateway["Spring Cloud Gateway"]
